@@ -1,0 +1,25 @@
+<link rel="stylesheet" href="site.css">
+<main class=container>
+    <p>hi</p>
+    <div class=row>
+        <div class=col>
+            <p>welcome to Virtual Txti<sup>[1]</sup></p>
+        </div>
+        <div class="col">
+            <aside><sup>[1]</sup> Only called so as it's a <a href="https://www.vlang.io">V</a> implementation of the <a
+                    href="https://www.txti.es">txti.es</a> site that i have no relation to.</aside>
+        </div>
+    </div>
+    <p>Use common sense while posting, inappropriate content <small>(if you have to ask 'is this nsfw?' don't post
+            it)</small> will be removed.</p>
+    <form action="submit" method="POST" name="site-form" id="site-form">
+        <div>
+            <label for="content-area">
+                Create new site
+            </label>
+            <textarea id=content-area name=site_content rows=20 cols=40></textarea>
+        </div>
+    </form>
+
+    <button id=submit-content name=submit-content form="site-form" value="submit">Submit</button>
+</main>

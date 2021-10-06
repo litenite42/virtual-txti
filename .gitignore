@@ -1,0 +1,10 @@
+# Binaries for programs and plugins
+main
+virtual-txti
+*.exe
+*.exe~
+*.so
+*.dylib
+*.dll
+*.env
+.vscode/*

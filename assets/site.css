@@ -1,0 +1,45 @@
+* {
+    box-sizing: border-box;
+}
+form div label, form div input, form div textarea, form div select {
+    display: block;
+}
+form label {
+    font-weight: bolder;
+    font-size: smaller;
+}
+aside {
+    border: 1px solid black;
+    box-shadow: 10px 5px 5px cornflowerblue;
+    background-color: lightsalmon;
+    padding: .5em;
+    margin: .5em;
+    max-width: 100px;
+    overflow-wrap: break-word;
+}
+main {
+    min-width: 400px;
+    max-width: 800px;
+    margin:auto;
+}
+
+.row {
+    display: flex;
+    flex-wrap: wrap;
+    flex-flow: row;
+}
+.row > * {
+    box-sizing: border-box;
+    flex-shrink: 0;
+    width: 100%;
+    max-width: 100%;
+}
+.col {
+    flex: 1 0 0%;
+}
+.pull-right, aside {
+    float: right;
+}
+.small-text {
+    font-size: smaller;
+}

@@ -1,0 +1,26 @@
+<link rel="stylesheet" href="site.css">
+<script src="site.js"></script>
+<title>@webpage.title</title>
+<main class=container>
+    <span class=small-text><button data-target=#site-metadata onclick="toggle(this)" width=20px>&plus;</button> Toggle
+        metadata</span>
+    <div class=row id=site-metadata style="display: none;">
+        <div class="col">
+            <small>
+                Submitted By: @webpage.submitted_by
+            </small> <br>
+            <small>
+                Submitted On: @webpage.submitted_on
+            </small>
+        </div>
+    </div>
+
+    <form action="submit" method="POST" name="site-form" id="site-form">
+        <div>
+            <label for="content-area">Create new site</label>
+            <textarea id=content-area name=site_content rows=20 cols=40>@webpage.content</textarea>
+        </div>
+    </form>
+
+    <button id=submit-content name=submit-content form="site-form" value="submit">Submit</button>
+</main>
