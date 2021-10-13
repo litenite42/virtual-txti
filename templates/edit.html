@@ -1,26 +1,51 @@
-<link rel="stylesheet" href="site.css">
-<script src="site.js"></script>
-<title>@webpage.title</title>
-<main class=container>
-    <span class=small-text><button data-target=#site-metadata onclick="toggle(this)" width=20px>&plus;</button> Toggle
-        metadata</span>
-    <div class=row id=site-metadata style="display: none;">
+<html>
+
+<head>
+    <title>@webpage.title</title>
+    @css 'site.css'
+    @js 'site.js'
+</head>
+
+<body>
+    <main class=container>
+        <span class=small-text><button data-target=#site-metadata onclick="toggle(this)" width=20px>&plus;</button>
+            Toggle
+            metadata</span>
+        <div class=row id=site-metadata style="display: none;">
+            <div class="col">
+                <small>
+                    Submitted By: @webpage.submitted_by
+                </small> <br>
+                <small>
+                    Submitted On: @webpage.submitted_on
+                </small>
+            </div>
+        </div>
+        <div class="row">
         <div class="col">
-            <small>
-                Submitted By: @webpage.submitted_by
-            </small> <br>
-            <small>
-                Submitted On: @webpage.submitted_on
-            </small>
-        </div>
-    </div>
 
-    <form action="submit" method="POST" name="site-form" id="site-form">
-        <div>
-            <label for="content-area">Create new site</label>
-            <textarea id=content-area name=site_content rows=20 cols=40>@webpage.content</textarea>
-        </div>
-    </form>
+        <form action="submit" method="POST" name="site-form" id="site-form">
+            <input type="hidden" name="Id" id="Id"  value=@webpage.id>
+            <div>
+                <label for="content-area">Edit site content:</label>
+                <textarea id=Content name=Content rows=20 cols=40>@webpage.content</textarea>
+            </div>
+            <div>
+                <label for="editor-email">Your email:</label>
+                <input type="email" name="EditedBy" id="EditedBy">
+            </div>
+            <div>
+                <label for="edit-code">Edit code:</label>
+                <input type="text" name="EditCode" id="EditCode">
+            </div>
+        </form>
+</div>
+<div class="col">
+    @html_text
+</div>
+</div>
+        <button id=submit-content name=submit-content form="site-form" value="edit">Submit</button>
+    </main>
+</body>
 
-    <button id=submit-content name=submit-content form="site-form" value="submit">Submit</button>
-</main>
+</html>

@@ -3,14 +3,20 @@ import mysql
 import models
 import zztkm.vdotenv as denv
 import os
+import vweb.assets
+import strings
+import rand
+import time
+import strconv
+import markdown
 
 const (
 	cnxn_settings = load_env()
 )
 
 struct DbSettings {
-	uname string
-	dbname string
+	uname    string
+	dbname   string
 	password string
 }
 
@@ -23,24 +29,24 @@ pub mut:
 fn load_env() DbSettings {
 	denv.load()
 
-	return DbSettings {
-		uname : os.getenv('USER_NAME')
-		dbname : os.getenv('DB_NAME')
-		password : os.getenv('PASSWORD')
+	return DbSettings{
+		uname: os.getenv('USER_NAME')
+		dbname: os.getenv('DB_NAME')
+		password: os.getenv('PASSWORD')
 	}
 }
 
-fn (mut app App) init_cnxn()  {
+fn (mut app App) init_cnxn() {
 	app.cnxn = mysql.Connection{
-			username: cnxn_settings.uname
-			dbname: cnxn_settings.dbname
-			password: cnxn_settings.password
-		}
+		username: cnxn_settings.uname
+		dbname: cnxn_settings.dbname
+		password: cnxn_settings.password
+	}
 }
 
 pub fn init_app() &App {
 	mut app := &App{}
-	
+
 	app.init_cnxn()
 	return app
 }
@@ -49,50 +55,162 @@ fn main() {
 	mut app := init_app()
 	// Automatically make available known static mime types found in given directory.
 	app.handle_static('assets', true)
-	vweb.run(&App{}, 8082)
+	vweb.run(app, 8082)
 }
 
-pub fn (mut app App) index() vweb.Result {
+fn (mut app App) index() vweb.Result {
 	return $vweb.html()
 }
 
-["/edit"]
+['/edit']
 pub fn (mut app App) edit() vweb.Result {
 	uuid := app.query['q']
-	println('hello $uuid')
 	app.init_cnxn()
-		mut connection := app.cnxn
-		
-		connection.connect() or { panic(err) }
-		// Change the default database
-		// connection.select_db('db_users') ?
-		// Do a query
-		get_page_info := connection.query("SELECT * from WebPages where Guid = '$uuid'") or { panic(err) }
-		mut webpage := &models.WebPage{}
-		// Get the result as maps
-		for page in get_page_info.maps() {
-			// Access the name of user
-			webpage = models.map_to_page(page)
-		}
-		defer {
+	mut connection := app.cnxn
+
+	connection.connect() or { panic(err) }
+
+	get_page_info := connection.query("SELECT wp.* from WebPages wp where wp.Guid = '$uuid'") or {
+		panic(err)
+	}
+	mut webpage := &models.WebPage{}
+	// Get the result as maps
+	for page in get_page_info.maps() {
+		// Access the name of user
+		webpage = models.map_to_page(page)
+	}
+	defer {
 		unsafe {
 			// Free the query result
 			get_page_info.free()
 		}
-		}
-		// Close the connection if needed
-		connection.close()
-
-
+	}
+	// Close the connection if needed
+	connection.close()
+	html_text := vweb.RawHtml(markdown.to_html(webpage.content))
 	return $vweb.html()
 }
 
 ['/submit'; post]
 pub fn (mut app App) submit_content() vweb.Result {
 	app.init_cnxn()
-	site_content := app.form['site_content']
-	println(site_content)
-	// println(app)
+	form := app.form.clone()
 
-	return app.text('Ok')
+	mut web_page := models.map_to_page(form)
+
+	submit_mode := form['submit-content']
+
+	table := 'WebPages'
+	mut query := strings.new_builder(100)
+	now := time.now()
+	mut connection := app.cnxn
+
+	connection.connect() or { panic(err) }
+
+	match submit_mode {
+		'create' {
+			if web_page.edit_code == models.default_guid || web_page.edit_code.len == 0 {
+				guid := rand.uuid_v4()
+				start_ndx := guid.len - 8
+
+				web_page.edit_code = guid[start_ndx..guid.len]
+			}
+			query.write_string('INSERT INTO $table (Title, Content,SubmittedBy,SubmittedOn,EditCode) Values (')
+			query.write_string("'")
+			query.write_string(connection.escape_string(web_page.title))
+			query.write_string("'")
+			query.write_string(',')
+			query.write_string("'")
+			query.write_string(connection.escape_string(web_page.content))
+			query.write_string("'")
+			query.write_string(',')
+			query.write_string("'")
+			query.write_string(connection.escape_string(web_page.submitted_by))
+			query.write_string("'")
+			query.write_string(',')
+			query.write_string("'")
+			query.write_string(connection.escape_string(now.format()))
+			query.write_string("'")
+			query.write_string(',')
+			query.write_string("'")
+			query.write_string(connection.escape_string(web_page.edit_code))
+			query.write_string("'")
+			query.write_string(');')
+		}
+		'edit' {
+			get_page_info := connection.query('SELECT wp.* from WebPages wp where wp.id = $web_page.id') or {
+				panic(err)
+			}
+			mut db_entry := &models.WebPage{}
+			// Get the result as maps
+			for page in get_page_info.maps() {
+				// Access the name of user
+				db_entry = models.map_to_page(page)
+			}
+			println(web_page.edit_code)
+			if web_page.edit_code != db_entry.edit_code {
+				return app.text('Error: Invalid Edit Code')
+			}
+
+			edit_time := time.now()
+
+			query.write_string('UPDATE $table\n')
+			query.write_string('set\n')
+			query.write_string("Content = '${connection.escape_string(web_page.content)}',\n")
+			query.write_string("EditedBy = '${connection.escape_string(web_page.edited_by)}',\n")
+			query.write_string("EditedOn = '${connection.escape_string(edit_time.format())}'\n")
+			query.write_string('where Id = $web_page.id')
+		}
+		else {}
+	}
+
+	query_stmt := query.str()
+	connection.query(query_stmt) or { panic(err) }
+
+	mut id := 0
+	if submit_mode == 'create' {
+		val := connection.last_id()
+
+		if val is int {
+			id = int(val)
+		}
+	} else {
+		id = web_page.id
+	}
+	app.query['id'] = id.str()
+	return app.details()
+}
+
+pub fn (mut app App) details() vweb.Result {
+	app.init_cnxn()
+	mut connection := app.cnxn
+	mut query := 'SELECT wp.* from WebPages wp where '
+	connection.connect() or { panic(err) }
+	if 'id' in app.query {
+		str_id := app.query['id']
+		id := strconv.atoi(str_id) or { return app.text('Error: Invalid Id entered.') }
+		query += 'wp.Id = $id'
+	} else {
+		uuid := app.query['q']
+		query += "wp.Guid = '$uuid'"
+	}
+	// println(query)
+	get_page_info := connection.query(query) or { panic(err) }
+	mut webpage := &models.WebPage{}
+	// Get the result as maps
+	for page in get_page_info.maps() {
+		// Access the name of user
+		webpage = models.map_to_page(page)
+	}
+	defer {
+		unsafe {
+			// Free the query result
+			get_page_info.free()
+		}
+	}
+	// Close the connection if needed
+	connection.close()
+
+	html_text := vweb.RawHtml(markdown.to_html(webpage.content))
+	return $vweb.html()
 }
