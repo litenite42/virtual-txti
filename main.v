@@ -172,13 +172,13 @@ pub fn (mut app App) submit_content() vweb.Result {
 		val := connection.last_id()
 		if val is int {
 			id = int(val)
-
-			return app.json('{"key": "$id" }')
+			site_result := connection.query('select guid from WebPages where id = $id') or { panic(err) }
+			site := site_result.maps()[0]
+			uuid := site['guid']
+			return app.json('{"key": "$uuid" }')
 		}
 	} else {
-		id = web_page.id
-		app.query['id'] = web_page.id.str()
-		result = '/details?id=$id'
+		result = '/details?q=$web_page.guid}'
 	}
 
 	return app.redirect(result) // app.details()

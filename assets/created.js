@@ -2,11 +2,9 @@ const $ = document.querySelector.bind(document),
 $$ = document.querySelectorAll.bind(document);
 
 if (sessionStorage.getItem('created.key')) {
-    let createdId = sessionStorage.getItem('created.key')
-    console.log(createdId)
-    let formData = new FormData();
-    formData.append('id', createdId)
-    fetch('/site_details?id='+createdId).then(r => r.json()).then(data => {
+    let createdId = sessionStorage.getItem('created.key');
+    
+    fetch('/site_details?q='+createdId).then(r => r.json()).then(data => {
         let guidTexts = $$('.guid-text'),
             editCode = $('#edit-code'),
             editLink = $('#edit-link'),
