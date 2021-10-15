@@ -35,10 +35,22 @@
                 <label for="EditCode">Custom Edit Code (like a password)</label>
                 <input name="EditCode" id="EditCode" type="password">
             </div>
+            <input id=submit-content name=submit-content type="submit" value="create">
         </form>
 
-        <button id=submit-content name=submit-content form="site-form" value="create">Submit</button>
+        
     </main>
+    <script>
+        const form = document.getElementById('site-form');
+
+        form.onsubmit = function (event) {
+            event.preventDefault();
+            let data = new FormData(form);
+            data.append('submit-content', 'create');
+            
+            fetch(form.action, { method: 'POST', body: data }).then(response => response.json()).then(data => { sessionStorage.setItem('created.key', data.key); location.href="/created" });
+        };
+    </script>
 </body>
 
 </html>

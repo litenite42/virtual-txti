@@ -172,7 +172,7 @@ pub fn (mut app App) submit_content() vweb.Result {
 		val := connection.last_id()
 		if val is int {
 			id = int(val)
-			
+
 			return app.json('{"key": "$id" }')
 		}
 	} else {
@@ -180,22 +180,22 @@ pub fn (mut app App) submit_content() vweb.Result {
 		app.query['id'] = web_page.id.str()
 		result = '/details?id=$id'
 	}
-	
+
 	return app.redirect(result) // app.details()
 }
 
 struct ShortSite {
-		title string
-		edit_code string
-		guid string
-		html_text string
-	}
+	title     string
+	edit_code string
+	guid      string
+	html_text string
+}
 
 pub fn (mut app App) site_details() vweb.Result {
 	app.init_cnxn()
 	mut connection := app.cnxn
 	mut query := 'SELECT wp.Title, wp.Content, wp.EditCode, wp.Guid from WebPages wp where '
-	
+
 	connection.connect() or { panic(err) }
 	if 'id' in app.query {
 		str_id := app.query['id']
@@ -205,7 +205,7 @@ pub fn (mut app App) site_details() vweb.Result {
 		uuid := app.query['q']
 		query += "wp.Guid = '$uuid'"
 	}
-	
+
 	get_page_info := connection.query(query) or { panic(err) }
 	mut webpage := &models.WebPage{}
 	// Get the result as maps
@@ -223,8 +223,13 @@ pub fn (mut app App) site_details() vweb.Result {
 	connection.close()
 
 	html_text := vweb.RawHtml(markdown.to_html(webpage.content))
-	
-	x := ShortSite{title: webpage.title, edit_code: webpage.edit_code, guid: webpage.guid, html_text: html_text}
+
+	x := ShortSite{
+		title: webpage.title
+		edit_code: webpage.edit_code
+		guid: webpage.guid
+		html_text: html_text
+	}
 
 	return app.json(json.encode(x))
 }
@@ -246,7 +251,7 @@ pub fn (mut app App) details() vweb.Result {
 		uuid := app.query['q']
 		query += "wp.Guid = '$uuid'"
 	}
-	
+
 	get_page_info := connection.query(query) or { panic(err) }
 	mut webpage := &models.WebPage{}
 	// Get the result as maps

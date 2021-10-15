@@ -16,14 +16,15 @@ pub mut:
 	submitted_on time.Time
 	edited_by    string
 	edited_on    time.Time
-	edit_code string
+	edit_code    string
+	guid         string
 }
 
 pub struct PageGuid {
-	pub mut:
-	page_id int
+pub mut:
+	page_id     int
 	detail_guid string
-	edit_guid string
+	edit_guid   string
 }
 
 pub fn map_to_page(result map[string]string) &WebPage {
@@ -37,25 +38,28 @@ pub fn map_to_page(result map[string]string) &WebPage {
 		submitted_on: submit_time // if 'SubmittedOn' in result { result['SubmittedOn'] } else
 		edited_by: if 'EditedBy' in result { result['EditedBy'] } else { '' }
 		edited_on: edit_time
-		edit_code: if 'EditCode' in result { result['EditCode'] } else { default_guid }
+		edit_code: if 'EditCode' in result { result['EditCode'] } else { models.default_guid }
+		guid: if 'Guid' in result { result['Guid'] } else { models.default_guid }
 	}
 }
 
 pub fn map_to_guids(result map[string]string) ?&PageGuid {
-	id := if 'PageId' in result { strconv.atoi(result['PageId']) or { -1 } } else {-1}
-	detail_guid := if 'DetailGuid' in result { result['DetailGuid'] }  else { '' }
-	edit_guid := if 'EditGuid' in result { result['EditGuid'] }  else { '' }
+	id := if 'PageId' in result { strconv.atoi(result['PageId']) or { -1 } } else { -1 }
+	detail_guid := if 'DetailGuid' in result { result['DetailGuid'] } else { '' }
+	edit_guid := if 'EditGuid' in result { result['EditGuid'] } else { '' }
 
 	if id == -1 {
 		return error_with_code('Invalid Page Id.', 1)
-	} if default_guid == '' {
+	}
+	if models.default_guid == '' {
 		return error_with_code('Invalid Detail Guid.', 2)
-	} if edit_guid == '' {
+	}
+	if edit_guid == '' {
 		return error_with_code('Invalid Detail Guid.', 3)
 	}
-	return &PageGuid {
-		page_id : id
-		detail_guid : detail_guid
-		edit_guid : edit_guid
+	return &PageGuid{
+		page_id: id
+		detail_guid: detail_guid
+		edit_guid: edit_guid
 	}
 }

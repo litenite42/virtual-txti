@@ -1,0 +1,30 @@
+<html>
+
+<head>
+    <title>New Site Created</title>
+    @css 'site.css'
+</head>
+
+<body>
+
+    <main class=container>
+        <section class=row>
+            <section class="col" id="html-text">
+            </section>
+        </section>
+        <section class=row>
+            <section class=col>
+                <p>Your page's ID is: <text class="guid-text"></text></p>
+                <p>Add /details?q=<em class="guid-text"></em> to the url to view your new site.
+                <br/>
+                <small>You can share this url to allow others to view your page.</small></p>
+                <p>Your edit code is: <text id="edit-code"></text></p>
+                <p>You can edit your page <span id="edit-link"></span></p>
+
+            </section>
+        </section>
+    </main>
+    @js 'created.js'
+</body>
+
+</html>

@@ -5,7 +5,6 @@
     @css 'site.css'
     @js 'site.js'
 </head>
-
 <body>
     <main class=container>
         <span class=small-text><button data-target=#site-metadata onclick="toggle(this)" width=20px>&plus;</button>
@@ -22,30 +21,39 @@
             </div>
         </div>
         <div class="row">
-        <div class="col">
-
-        <form action="submit" method="POST" name="site-form" id="site-form">
-            <input type="hidden" name="Id" id="Id"  value=@webpage.id>
-            <div>
-                <label for="content-area">Edit site content:</label>
-                <textarea id=Content name=Content rows=20 cols=40>@webpage.content</textarea>
+            <div class="col">
+                <form action="submit" method="POST" name="site-form" id="site-form">
+                    <input type="hidden" name="Id" id="Id" value=@webpage.id>
+                    <div>
+                        <label for="content-area">Edit site content:</label>
+                        <textarea id=Content name=Content rows=20 cols=40>@webpage.content</textarea>
+                    </div>
+                    <div>
+                        <label for="editor-email">Your email:</label>
+                        <input type="email" name="EditedBy" id="EditedBy">
+                    </div>
+                    <div>
+                        <label for="edit-code">Edit code:</label>
+                        <input type="text" name="EditCode" id="EditCode">
+                    </div>
+                    <input id=submit-content name=submit-content type="submit" value="edit">
+                </form>
             </div>
-            <div>
-                <label for="editor-email">Your email:</label>
-                <input type="email" name="EditedBy" id="EditedBy">
+            <div class="col">
+                @html_text
             </div>
-            <div>
-                <label for="edit-code">Edit code:</label>
-                <input type="text" name="EditCode" id="EditCode">
-            </div>
-        </form>
-</div>
-<div class="col">
-    @html_text
-</div>
-</div>
-        <button id=submit-content name=submit-content form="site-form" value="edit">Submit</button>
+        </div>
     </main>
-</body>
+    <!-- <script>
+        const form = document.getElementById('site-form');
 
+        form.onsubmit = function (event) {
+            event.preventDefault();
+            let data = new FormData(form);
+            data.append('submit-content', 'edit');
+            
+            fetch(form.action, { method: 'POST', body: data }).then(response => response.json()).then(data => { sessionStorage.setItem('created.key', data.key); });
+        };
+    </script> -->
+</body>
 </html>
