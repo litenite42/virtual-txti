@@ -3,7 +3,7 @@ import mysql
 import models
 import zztkm.vdotenv as denv
 import os
-import vweb.assets
+import json
 import strings
 import rand
 import time
@@ -104,7 +104,6 @@ pub fn (mut app App) submit_content() vweb.Result {
 	mut query := strings.new_builder(100)
 	now := time.now()
 	mut connection := app.cnxn
-
 	connection.connect() or { panic(err) }
 
 	match submit_mode {
@@ -168,23 +167,35 @@ pub fn (mut app App) submit_content() vweb.Result {
 	connection.query(query_stmt) or { panic(err) }
 
 	mut id := 0
+	mut result := '' // app.not_found()
 	if submit_mode == 'create' {
 		val := connection.last_id()
-
 		if val is int {
 			id = int(val)
+			
+			return app.json('{"key": "$id" }')
 		}
 	} else {
 		id = web_page.id
+		app.query['id'] = web_page.id.str()
+		result = '/details?id=$id'
 	}
-	app.query['id'] = id.str()
-	return app.details()
+	
+	return app.redirect(result) // app.details()
 }
 
-pub fn (mut app App) details() vweb.Result {
+struct ShortSite {
+		title string
+		edit_code string
+		guid string
+		html_text string
+	}
+
+pub fn (mut app App) site_details() vweb.Result {
 	app.init_cnxn()
 	mut connection := app.cnxn
-	mut query := 'SELECT wp.* from WebPages wp where '
+	mut query := 'SELECT wp.Title, wp.Content, wp.EditCode, wp.Guid from WebPages wp where '
+	
 	connection.connect() or { panic(err) }
 	if 'id' in app.query {
 		str_id := app.query['id']
@@ -194,7 +205,48 @@ pub fn (mut app App) details() vweb.Result {
 		uuid := app.query['q']
 		query += "wp.Guid = '$uuid'"
 	}
-	// println(query)
+	
+	get_page_info := connection.query(query) or { panic(err) }
+	mut webpage := &models.WebPage{}
+	// Get the result as maps
+	for page in get_page_info.maps() {
+		// Access the name of user
+		webpage = models.map_to_page(page)
+	}
+	defer {
+		unsafe {
+			// Free the query result
+			get_page_info.free()
+		}
+	}
+	// Close the connection if needed
+	connection.close()
+
+	html_text := vweb.RawHtml(markdown.to_html(webpage.content))
+	
+	x := ShortSite{title: webpage.title, edit_code: webpage.edit_code, guid: webpage.guid, html_text: html_text}
+
+	return app.json(json.encode(x))
+}
+
+pub fn (mut app App) created() vweb.Result {
+	return $vweb.html()
+}
+
+pub fn (mut app App) details() vweb.Result {
+	app.init_cnxn()
+	mut connection := app.cnxn
+	mut query := 'SELECT wp.Title, wp.Content from WebPages wp where '
+	connection.connect() or { panic(err) }
+	if 'id' in app.query {
+		str_id := app.query['id']
+		id := strconv.atoi(str_id) or { return app.text('Error: Invalid Id entered.') }
+		query += 'wp.Id = $id'
+	} else {
+		uuid := app.query['q']
+		query += "wp.Guid = '$uuid'"
+	}
+	
 	get_page_info := connection.query(query) or { panic(err) }
 	mut webpage := &models.WebPage{}
 	// Get the result as maps
