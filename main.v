@@ -18,6 +18,7 @@ struct DbSettings {
 	uname    string
 	dbname   string
 	password string
+	httpport int
 }
 
 struct App {
@@ -33,6 +34,7 @@ fn load_env() DbSettings {
 		uname: os.getenv('USER_NAME')
 		dbname: os.getenv('DB_NAME')
 		password: os.getenv('PASSWORD')
+		httpport: os.getenv('PORT').int()
 	}
 }
 
@@ -55,7 +57,8 @@ fn main() {
 	mut app := init_app()
 	// Automatically make available known static mime types found in given directory.
 	app.handle_static('assets', true)
-	vweb.run(app, 8082)
+
+	vweb.run(app, cnxn_settings.httpport)
 }
 
 fn (mut app App) index() vweb.Result {
