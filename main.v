@@ -4,7 +4,6 @@ import models
 import zztkm.vdotenv as denv
 import os
 import json
-import strings
 import rand
 import time
 import strconv
@@ -72,22 +71,11 @@ pub fn (mut app App) edit() vweb.Result {
 	mut connection := app.cnxn
 
 	connection.connect() or { panic(err) }
+	mut webpage := sql connection {
+		select from models.WebPage where guid == uuid order by id limit 1
+	}
 
-	get_page_info := connection.query("SELECT wp.* from WebPages wp where wp.Guid = '$uuid'") or {
-		panic(err)
-	}
-	mut webpage := &models.WebPage{}
-	// Get the result as maps
-	for page in get_page_info.maps() {
-		// Access the name of user
-		webpage = models.map_to_page(page)
-	}
-	defer {
-		unsafe {
-			// Free the query result
-			get_page_info.free()
-		}
-	}
+	println(webpage)
 	// Close the connection if needed
 	connection.close()
 	html_text := vweb.RawHtml(markdown.to_html(webpage.content))
@@ -103,8 +91,6 @@ pub fn (mut app App) submit_content() vweb.Result {
 
 	submit_mode := form['submit-content']
 
-	table := 'WebPages'
-	mut query := strings.new_builder(100)
 	now := time.now()
 	mut connection := app.cnxn
 	connection.connect() or { panic(err) }
@@ -117,67 +103,52 @@ pub fn (mut app App) submit_content() vweb.Result {
 
 				web_page.edit_code = guid[start_ndx..guid.len]
 			}
-			query.write_string('INSERT INTO $table (Title, Content,SubmittedBy,SubmittedOn,EditCode) Values (')
-			query.write_string("'")
-			query.write_string(connection.escape_string(web_page.title))
-			query.write_string("'")
-			query.write_string(',')
-			query.write_string("'")
-			query.write_string(connection.escape_string(web_page.content))
-			query.write_string("'")
-			query.write_string(',')
-			query.write_string("'")
-			query.write_string(connection.escape_string(web_page.submitted_by))
-			query.write_string("'")
-			query.write_string(',')
-			query.write_string("'")
-			query.write_string(connection.escape_string(now.format()))
-			query.write_string("'")
-			query.write_string(',')
-			query.write_string("'")
-			query.write_string(connection.escape_string(web_page.edit_code))
-			query.write_string("'")
-			query.write_string(');')
+			val := models.WebPage{
+				title: web_page.title
+				content: web_page.content
+				submitted_by: web_page.submitted_by
+				submitted_on: now
+				edit_code: web_page.edit_code
+				edited_on: time.unix(0) // ideally these 3 would be skipped
+				edited_by: 'N/A'
+				guid: 'N/A'
+			}
+			sql connection {
+				insert val into models.WebPage
+			}
 		}
 		'edit' {
-			get_page_info := connection.query('SELECT wp.* from WebPages wp where wp.id = $web_page.id') or {
-				panic(err)
+			db_entry := sql connection {
+				select from models.WebPage where id == web_page.id order by id
 			}
-			mut db_entry := &models.WebPage{}
-			// Get the result as maps
-			for page in get_page_info.maps() {
-				// Access the name of user
-				db_entry = models.map_to_page(page)
-			}
-			println(web_page.edit_code)
+			dump(db_entry)
 			if web_page.edit_code != db_entry.edit_code {
 				return app.text('Error: Invalid Edit Code')
 			}
 
 			edit_time := time.now()
 
-			query.write_string('UPDATE $table\n')
-			query.write_string('set\n')
-			query.write_string("Content = '${connection.escape_string(web_page.content)}',\n")
-			query.write_string("EditedBy = '${connection.escape_string(web_page.edited_by)}',\n")
-			query.write_string("EditedOn = '${connection.escape_string(edit_time.format())}'\n")
-			query.write_string('where Id = $web_page.id')
+			sql connection {
+				update models.WebPage set content = web_page.content, edited_by = edit_time, edited_on = web_page.edited_on
+				where id == web_page.id
+			}
 		}
 		else {}
 	}
 
-	query_stmt := query.str()
-	connection.query(query_stmt) or { panic(err) }
-
-	mut id := 0
+	mut iid := 0
 	mut result := '' // app.not_found()
 	if submit_mode == 'create' {
 		val := connection.last_id()
 		if val is int {
-			id = int(val)
-			site_result := connection.query('select guid from WebPages where id = $id') or { panic(err) }
-			site := site_result.maps()[0]
-			uuid := site['guid']
+			iid = int(val)
+			// site_result := connection.query('select guid from WebPages where id = $iid') or { panic(err) }
+			// site := site_result.maps()[0]
+			wp := sql connection {
+				select from models.WebPage where id == iid
+			}
+
+			uuid := wp.guid // site['guid']
 			return app.json('{"key": "$uuid" }')
 		}
 	} else {

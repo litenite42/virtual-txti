@@ -6,25 +6,18 @@ import strconv
 pub const (
 	default_guid = '0000000000'
 )
-
+[table: 'WebPages']
 pub struct WebPage {
 pub mut:
-	id           int
-	title        string
-	content      string
-	submitted_by string
-	submitted_on time.Time
-	edited_by    string
-	edited_on    time.Time
-	edit_code    string
-	guid         string
-}
-
-pub struct PageGuid {
-pub mut:
-	page_id     int
-	detail_guid string
-	edit_guid   string
+	id           int [primary; sql: serial]
+	title        string [sql: 'Title']
+	content      string [sql: 'Content']
+	submitted_by string [sql: 'SubmittedBy']
+	submitted_on time.Time [sql: 'SubmittedOn']
+	edited_by    string [sql: 'EditedBy']
+	edited_on    time.Time [sql: 'EditedOn']
+	edit_code    string [sql: 'EditCode']
+	guid         string [sql: 'Guid']
 }
 
 pub fn map_to_page(result map[string]string) &WebPage {
@@ -40,26 +33,5 @@ pub fn map_to_page(result map[string]string) &WebPage {
 		edited_on: edit_time
 		edit_code: if 'EditCode' in result { result['EditCode'] } else { models.default_guid }
 		guid: if 'Guid' in result { result['Guid'] } else { models.default_guid }
-	}
-}
-
-pub fn map_to_guids(result map[string]string) ?&PageGuid {
-	id := if 'PageId' in result { strconv.atoi(result['PageId']) or { -1 } } else { -1 }
-	detail_guid := if 'DetailGuid' in result { result['DetailGuid'] } else { '' }
-	edit_guid := if 'EditGuid' in result { result['EditGuid'] } else { '' }
-
-	if id == -1 {
-		return error_with_code('Invalid Page Id.', 1)
-	}
-	if models.default_guid == '' {
-		return error_with_code('Invalid Detail Guid.', 2)
-	}
-	if edit_guid == '' {
-		return error_with_code('Invalid Detail Guid.', 3)
-	}
-	return &PageGuid{
-		page_id: id
-		detail_guid: detail_guid
-		edit_guid: edit_guid
 	}
 }
